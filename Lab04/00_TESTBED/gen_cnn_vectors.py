@@ -89,11 +89,11 @@ def random_kernel(rng):
     return f32(rng.uniform(-0.5, 0.5, (3,3)))
 
 def random_fc_weights(shape, rng):
-    return f32(rng.normal(-0.5, 0.5, shape))
+    return f32(rng.uniform(-0.5, 0.5, shape))
 
 def random_fc_bias_scalar(rng):
     """Return a single scalar bias (float32)."""
-    return f32(rng.normal(-0.5, 0.5))
+    return f32(rng.uniform(-0.5, 0.5))
 
 def flatten_pooled_2x2(p):
     # row-major: [0,0], [0,1], [1,0], [1,1]
