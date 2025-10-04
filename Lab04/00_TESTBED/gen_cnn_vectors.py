@@ -81,19 +81,19 @@ def softmax3(z3):
 # -------------------------
 def random_image(channels, rng):
     if channels == 1:
-        return f32(rng.uniform(-1.0, 1.0, (6,6)))
+        return f32(rng.uniform(-0.5, 0.5, (6,6)))
     else:
-        return (f32(rng.uniform(-1.0, 1.0, (6,6))), f32(rng.uniform(-1.0, 1.0, (6,6))))
+        return (f32(rng.uniform(-0.5, 0.5, (6,6))), f32(rng.uniform(-0.5, 0.5, (6,6))))
 
 def random_kernel(rng):
-    return f32(rng.uniform(-1.0, 1.0, (3,3)))
+    return f32(rng.uniform(-0.5, 0.5, (3,3)))
 
 def random_fc_weights(shape, rng):
-    return f32(rng.normal(0, 0.3, shape))
+    return f32(rng.normal(-0.5, 0.5, shape))
 
 def random_fc_bias_scalar(rng):
     """Return a single scalar bias (float32)."""
-    return f32(rng.normal(0, 0.2))
+    return f32(rng.normal(-0.5, 0.5))
 
 def flatten_pooled_2x2(p):
     # row-major: [0,0], [0,1], [1,0], [1,1]
