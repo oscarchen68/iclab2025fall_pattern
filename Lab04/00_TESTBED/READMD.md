@@ -63,12 +63,12 @@ TESTBED.v
 
 ## Example Command Summary
 
-# Step 1. Generate random input/golden vectors
+### Step 1. Generate random input/golden vectors
 ```
 python3 gen_cnn_vectors.py --cases 8 --task0-ratio 0.5 --seed 123
 ```
 
-# Step 2. Run your Verilog simulation
+### Step 2. Run your Verilog simulation
 ```
 vcs -full64 -sverilog ../CNN.v TESTBED.v PATTERN.v -o simv
 ./simv | tee log.txt
@@ -78,7 +78,7 @@ or
 ./01_run_vcs_rtl
 ```
 
-# Step 3. Check the result
+### Step 3. Check the result
 grep "PASS" log.txt
 ```
 ```
