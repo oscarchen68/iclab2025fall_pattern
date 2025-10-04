@@ -140,8 +140,8 @@ def task0_compute_and_emit(f_in, f_gold, mode_bits, rng, wb_count=63):
     # print("[DEBUG] P0 (padded img0):\n", P0)
     # print("[DEBUG] P1 (padded img1):\n", P1)
 
-    conv0 = conv2d_single(P0, k0_ch1) + conv2d_single(P1, k0_ch2)
-    conv1 = conv2d_single(P0, k1_ch1) + conv2d_single(P1, k1_ch2)
+    conv0 = conv2d_single(P0, k0_ch1) + conv2d_single(P1, k1_ch1)
+    conv1 = conv2d_single(P0, k0_ch2) + conv2d_single(P1, k1_ch2)
     # print("[DEBUG] conv0 result:\n", conv0)
     # print("[DEBUG] conv1 result:\n", conv1)
 
