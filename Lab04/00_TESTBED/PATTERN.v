@@ -354,7 +354,7 @@ endtask
 task drive_task1_and_check;
     integer idx;
 begin
-    $display("[Task0] case %0d start to send input at cycle %0d", case_id, cycle_cnt);
+    $display("[Task1] case %0d start to send input at cycle %0d", case_id, cycle_cnt);
     // Read: 36 image, 18 (ker1 ker2), 5 capacity_cost (decimal)
     for (idx=0; idx<36; idx=idx+1) begin
         ret = $fscanf(fin, "%h\n", buf_img[idx]);
