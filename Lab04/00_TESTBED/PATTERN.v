@@ -106,6 +106,7 @@ begin
     rst_n = 1'b0; // async low
     #(2*CYCLE);
     if ((out_valid !== 1'b0) || (out !== 32'b0) ) begin
+        show_fail;
         $display("---------------------------------------------------------------------------------------------");
         $display("             Fail! All outputs set to 0 when reset.");
         $display("---------------------------------------------------------------------------------------------");
@@ -123,6 +124,7 @@ endtask
 always @(negedge clk) begin
     if (released_reset && (out_valid===1'b0)) begin
         if (out !== 10'd0) begin
+            show_fail;
             $display("---------------------------------------------------------------------------------------------");
             $display("             Fail! Output value set to 0 when out_valid is 0.");
             $display("---------------------------------------------------------------------------------------------");
@@ -136,6 +138,7 @@ end
 // out_valid should NOT overlap with in_valid
 always @(negedge clk) begin
     if (released_reset && (in_valid===1'b1) && (out_valid===1'b1)) begin
+        show_fail;
         $display("---------------------------------------------------------------------------------------------");
         $display("             Fail! Out_valid should not overlap with in_valid.");
         $display("---------------------------------------------------------------------------------------------");
@@ -210,6 +213,7 @@ begin
     while (out_valid !== 1) begin
         wait_cycles = wait_cycles + 1;
         if (wait_cycles > 150) begin
+            show_fail;
             $display("SPEC-6 FAIL: execution latency > 150 cycles (case=%0d)", case_id);
             $finish;
         end
@@ -223,6 +227,7 @@ begin
             golden_r = fp32_to_real(golden32[out_cnt]);
             err = fabs(out_r - golden_r);
             if (err > 1.0e-6) begin
+                show_fail;
                 $display("FAIL (Task0) case=%0d idx=%0d | out=%h got=%.9f exp=%.9f | err=%.3e",
                          case_id, out_cnt, out, out_r, golden_r, err);
                 $finish;
@@ -230,23 +235,27 @@ begin
             out_cnt = out_cnt + 1;
             @(negedge clk);
             if (out_cnt<3 && out_valid!==1) begin
+                show_fail;
                 $display("FAIL (Task0) out_valid must be 3 consecutive cycles (case=%0d)", case_id);
                 $finish;
             end
         end
         // Must drop back to 0 on the next cycle
         if (out_valid!==0) begin
+            show_fail;
             $display("FAIL (Task0) out_valid should drop after 3 cycles (case=%0d)", case_id);
             $finish;
         end
     end else begin
         // ----- Task1: expect 1 output -----
         if (out!==golden32[0]) begin
+            show_fail;
             $display("FAIL (Task1) case=%0d | out=%h expected=%h", case_id, out, golden32[0]);
             $finish;
         end
         @(negedge clk);
         if (out_valid!==0) begin
+            show_fail;
             $display("FAIL (Task1) out_valid must be exactly 1 cycle (case=%0d)", case_id);
             $finish;
         end
@@ -445,6 +454,7 @@ initial begin
     forever begin
         ret = $fscanf(fin, "%d %d\n", tk_task, tk_mode);
         if (ret!=2) begin
+            show_success;
             $display("PASS: All %0d test cases passed!", case_id);
             $finish;
         end
@@ -470,3 +480,56 @@ initial begin
 end
 
 endmodule
+
+
+task show_success;
+begin
+$display("⠀⠀⠀⠀⠀⠀⣀⣀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠞⠛⠉⠉⠉⠙⠛⠲⠶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⢀⣾⠿⠟⠙⠿⠛⣷⣀⣴⠟⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠳⣦⡀⢀⣤⣤⡶⣦⣤⡀⠀⠀⠀");
+$display("⠀⠀⠀⢠⣿⠂⠀⠀⠀⢀⣾⠏⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⠉⠉⠀⠀⢸⡇⠀⠀⠀");
+$display("⠀⠀⠀⠈⠛⣶⠀⠀⢠⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣧⡀⠀⢠⣴⠟⠀⠀⠀");
+$display("⠀⠀⢀⡀⣀⣼⣛⢲⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣷⢶⣶⣧⣀⣀⠀⠀");
+$display("⢠⣴⣿⠉⠛⠀⠉⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣟⠁⠘⠋⠹⢷⡄");
+$display("⠸⣷⡄⠀⠀⠀⢰⡟⠀⠀⠀⠀⠀⣰⣶⣄⠀⠀⣀⠀⠀⡀⠀⢀⡀⠀⢰⣿⣷⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⣾⠃");
+$display("⠀⠛⠿⣷⣀⣀⣼⣇⠀⠀⠀⠄⣀⠻⡿⠋⠀⠀⠻⣦⡾⠻⠶⠾⠃⠀⠈⠛⠛⡀⠀⠉⠳⠄⣿⣦⣄⣽⠟⠋⠀");
+$display("⠀⠀⠀⣈⣽⡟⠳⣿⡀⣇⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢷⣀⠀⣠⢀⡿⠺⢿⣅⣀⠀⠀");
+$display("⠀⠀⣸⣯⠉⠁⠀⠸⣧⠘⠶⠴⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⢁⣾⠃⠀⠈⢩⣿⡀⠀");
+$display("⠀⠀⠿⣶⡀⣤⠀⢀⡿⣷⣤⣤⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⢿⣇⢀⣰⡆⣼⡾⠏⠀");
+$display("⠀⠀⠀⠘⠛⠛⠷⠛⢹⡏⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢻⡟⣿⡷⠟⠛⠛⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⣈⠻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⠿⠋⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⢀⣴⠶⢶⠟⢻⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⢠⡾⡟⠀⠀⠀⠸⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⠃⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠘⠷⣦⣀⣰⡀⢠⡿⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⠷⣦⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠈⠉⠉⠛⠛⢷⣤⣀⣠⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣴⣟⣁⣴⠟⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠉⠉⠛⠛⠓⠶⠶⠶⠶⠖⠛⠛⠉⠁⠀⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+end
+endtask
+
+task show_fail;
+begin
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠴⠶⠶⠶⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡴⣿⣽⡖⠂⠀⠀⠀⠀⠉⠙⠳⢦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣽⣾⠏⠀⠀⠀⠀⠀⠀⠻⢿⣯⣗⣤⣉⠻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠟⠓⠾⣿⡀⠀⠀⠀⠄⠀⠘⢿⣟⢿⣿⣦⡌⡻⣦⡀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⡏⣴⣦⣤⣦⡊⣿⣦⣤⣀⣀⣀⠀⢈⣿⣾⣷⣽⣿⠶⠿⠇⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣷⣿⣷⣼⠅⠁⣯⣡⣿⠶⠶⠾⣿⣿⣿⣿⡛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⢠⡾⠿⣯⣿⣿⣿⣿⣿⣿⣿⡿⣯⡄⡄⢀⠀⢉⡝⠿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⣠⡟⠘⣾⣯⣽⡿⠿⠟⠛⠛⠛⠛⠻⢶⣅⡀⠀⣛⢻⣿⡺⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⣀⣙⣉⣿⠟⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠳⠶⠾⠿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⢿⣟⣯⣭⣭⣽⠇⠀⠀⠀⢀⣤⡀⠀⠀⠀⠀⠀⠀⣠⣤⣀⠀⠀⠀⢻⡏⣭⣉⣉⣿⡷⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⣠⠾⣫⣽⠆⡏⠀⠀⠀⠀⠰⣿⡇⠀⠀⠀⠀⠀⠐⢾⣿⠋⠀⠀⠀⠈⣇⠰⣮⡙⢶⣄⠀⠀⠀⠀⠀⠀⠀");
+$display("⠘⠛⣿⣟⣩⡾⢧⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⢀⡿⢦⣈⢻⡟⠟⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠻⠛⠉⠀⠘⢷⡀⠀⠀⠀⠀⠀⠈⠙⢿⠟⠙⠁⠀⠀⠀⠀⠀⣠⡾⠀⠀⠙⠻⡟⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠈⠙⢶⣤⣀⠀⠀⡀⠀⠀⠀⡀⢀⡀⢀⣔⣶⠾⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠉⠙⠛⠃⠀⠀⠀⠀⠘⠋⠉⠁⠙⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠆⠀⠀⠸⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⣰⠇⠀⠀⢀⣄⠀⠀⠀⠀⢀⡾⠁⠀⠀⠀⠀⢹⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⣿⢀⣴⣴⣟⠀⠀⠀⠀⠀⣼⠀⠀⣀⣤⠖⠀⠀⢿⡀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣄⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠘⠛⠛⠁⢸⣆⠀⠀⠀⠀⠈⠙⠛⠉⠀⠀⠀⠀⠀⠻⣶⣶⠚⠋⠙⠻⠾⠯⠁⢹⡇⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣦⡀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠈⠿⠛⠛⠒⠒⢻⠀⣄⣸⡇⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣦⡀⠀⠀⠀⠀⠀⢻⡀⠀⠀⢸⠆⠀⠀⠀⠀⣠⡟⢀⣼⠟⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣷⠦⣤⡀⢸⡈⢷⡀⢀⡿⠀⠀⣀⣠⣾⣯⡶⠛⠁⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⢠⣰⡿⢶⣽⣿⣶⣾⣿⣿⡾⠟⠋⠀⠀⠀⠀⠀⠀");
+$display("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠋⠀⠀⠀⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+end
+endtask
