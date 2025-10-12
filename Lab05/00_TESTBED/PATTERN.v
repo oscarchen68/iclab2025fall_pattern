@@ -1,4 +1,4 @@
-`define CYCLE_TIME  20.0
+`define CYCLE_TIME  12.3
 
 module PATTERN(
     // output signals
@@ -16,6 +16,24 @@ module PATTERN(
     out_valid,
     out_value
 );
+
+// String control
+// Should use %0s
+reg[9*8:1]  reset_color       = "\033[1;0m";
+reg[10*8:1] txt_black_prefix  = "\033[1;30m";
+reg[10*8:1] txt_red_prefix    = "\033[1;31m";
+reg[10*8:1] txt_green_prefix  = "\033[1;32m";
+reg[10*8:1] txt_yellow_prefix = "\033[1;33m";
+reg[10*8:1] txt_blue_prefix   = "\033[1;34m";
+reg[10*8:1] txt_magenta_prefix = "\033[1;35m";
+
+
+reg[10*8:1] bkg_black_prefix  = "\033[40;1m";
+reg[10*8:1] bkg_red_prefix    = "\033[41;1m";
+reg[10*8:1] bkg_green_prefix  = "\033[42;1m";
+reg[10*8:1] bkg_yellow_prefix = "\033[43;1m";
+reg[10*8:1] bkg_blue_prefix   = "\033[44;1m";
+reg[10*8:1] bkg_white_prefix  = "\033[47;1m";
 
 // ========================================
 // I/O declaration
@@ -100,7 +118,7 @@ begin
     #(2*CYCLE);
     if ((out_valid !== 1'b0) || (out_value !== 32'b0) ) begin
         show_fail;
-        $display("Fail! All outputs must be 0 when reset.");
+        $display("%0sFail! All outputs must be 0 when reset.%0s", txt_red_prefix, reset_color);
         $finish;
     end
     rst_n = 1'b1;
@@ -115,7 +133,7 @@ always @(negedge clk) begin
     if (released_reset && (out_valid === 1'b0)) begin
         if (out_value !== 32'b0) begin
             show_fail;
-            $display("Fail! out_value must be 0 when out_valid is 0.");
+            $display("%0sFail! out_value must be 0 when out_valid is 0.%0s", txt_red_prefix, reset_color);
             repeat(2) @(negedge clk);
             $finish;
         end
@@ -127,7 +145,7 @@ always @(negedge clk) begin
     if (released_reset) begin
         if ((out_valid === 1'b1) && (in_valid_data === 1'b1 || in_valid_param === 1'b1)) begin
             show_fail;
-            $display("Fail! out_valid must not overlap with in_valid_data/in_valid_param.");
+            $display("%0sFail! out_valid must not overlap with in_valid_data/in_valid_param.%0s", txt_red_prefix, reset_color);
             repeat(2) @(negedge clk);
             $finish;
         end
@@ -175,7 +193,7 @@ always @(posedge clk) begin
             ret = $fscanf(fgold, "%d\n", golden_expected);
             if (ret != 1) begin
                 show_fail;
-                $display("ERROR: golden file ended prematurely at golden_counter=%0d", golden_counter);
+                $display("%0sERROR: golden file ended prematurely at golden_counter=%0d%0s", txt_red_prefix, golden_counter, reset_color);
                 $finish;
             end
             golden_counter = golden_counter + 1;
@@ -183,7 +201,7 @@ always @(posedge clk) begin
             // check DUT output
             if (out_value !== $signed(golden_expected)) begin
                 show_fail;
-                $display("Mismatch at golden index %0d", golden_counter-1);
+                $display("%0sMismatch at golden index %0d%0s", txt_red_prefix, golden_counter-1, reset_color);
                 $display(" DUT out_value = %0d (0x%08h)", out_value, out_value);
                 $display(" Expected      = %0d (0x%08h)", golden_expected, golden_expected);
                 repeat (5) @(negedge clk);
@@ -217,7 +235,7 @@ begin
         if (stable_cnt >= stable_negedges) disable wait_for_idle_stable_with_timeout;
         if (waited > max_cycles) begin
             show_fail;
-            $display("Timeout waiting for DUT idle. (%s)", msg);
+            $display("%0sTimeout waiting for DUT idle. (%s)%0s", txt_red_prefix, msg, reset_color);
             $finish;
         end
     end
@@ -236,7 +254,7 @@ begin
         waited = waited + 1;
         if (waited > max_cycles) begin
             show_fail;
-            $display("Timeout waiting for index outputs: got %0d / %0d within %0d cycles", idx_out_count, expected, max_cycles);
+            $display("%0sTimeout waiting for index outputs: got %0d / %0d within %0d cycles%0s", txt_red_prefix, idx_out_count, expected, max_cycles, reset_color);
             $finish;
         end
     end
@@ -259,7 +277,7 @@ initial begin
     fin   = $fopen(INPUT_FILE,  "r");
     fgold = $fopen(GOLDEN_FILE, "r");
     if (fin==0 || fgold==0) begin
-        $display("Cannot open input/golden files. Check paths.");
+        $display("%0sCannot open input/golden files. Check paths.%0s", txt_red_prefix, reset_color);
         $finish;
     end
 
@@ -270,20 +288,22 @@ initial begin
     // Read number of patterns
     ret = $fscanf(fin, "NUM_PATTERNS %d\n", num_patterns);
     if (ret != 1) begin
-        $display("Input file format error: cannot read NUM_PATTERNS");
+        $display("%0sInput file format error: cannot read NUM_PATTERNS%0s", txt_red_prefix, reset_color);
         $finish;
     end
-    $display("PATTERN: NUM_PATTERNS = %0d", num_patterns);
+    //$display("PATTERN: NUM_PATTERNS = %0d", num_patterns);
+    $display("%0sRead NUM_PATTERNS = %0d%0s", txt_blue_prefix, num_patterns, reset_color);
 
     // For each pattern
     for (p_id = 1; p_id <= num_patterns; p_id = p_id + 1) begin
         // read PATTERN header
         ret = $fscanf(fin, "PATTERN %d\n", tmp_int);
         if (ret != 1) begin
-            $display("Input file format error: expected PATTERN %0d header", p_id);
+            $display("%0sInput file format error: expected PATTERN %0d header%0s", txt_red_prefix, p_id, reset_color);
             $finish;
         end
-        $display("PATTERN: Starting pattern %0d", p_id);
+        $display("%0sPATTERN: Starting pattern %0d%0s", txt_magenta_prefix, p_id, reset_color);
+
         start_cycle = cycle_cnt;
 
         // --------------------------
@@ -292,13 +312,13 @@ initial begin
         for (frame_id = 0; frame_id < 16; frame_id = frame_id + 1) begin
             ret = $fscanf(fin, "FRAME %d\n", tmp_int);
             if (ret != 1) begin
-                $display("Missing FRAME header at frame %0d", frame_id);
+                $display("%0sMissing FRAME header at frame %0d%0s", txt_red_prefix, frame_id, reset_color);
                 $finish;
             end
             for (pixel_cnt = 0; pixel_cnt < 1024; pixel_cnt = pixel_cnt + 1) begin
                 ret = $fscanf(fin, "%h\n", tmp_int);
                 if (ret != 1) begin
-                    $display("Pixel read error frame %0d pixel %0d", frame_id, pixel_cnt);
+                    $display("%0sPixel read error frame %0d pixel %0d%0s", txt_red_prefix, frame_id, pixel_cnt, reset_color);
                     $finish;
                 end
                 frame_mem[frame_id][pixel_cnt] = tmp_int[7:0];
@@ -336,7 +356,7 @@ initial begin
             integer m0, m1, m2, m3;
             ret = $fscanf(fin, "INDEX %d MODES %d %d %d %d QP %d\n", tmp_int, m0, m1, m2, m3, qp_i);
             if (ret != 6) begin
-                $display("Missing INDEX line for index %0d", idx_i);
+                $display("%0sMissing INDEX line for index %0d%0s", txt_red_prefix, idx_i, reset_color);
                 $finish;
             end
 
@@ -386,7 +406,8 @@ initial begin
         //wait_gap_2to4_negedges();
 
         end_cycle = cycle_cnt;
-        $display("PATTERN %0d finished (cycles used: %0d)", p_id, end_cycle - start_cycle);
+        $display("%0sPATTERN %0d finished (cycles used: %0d)%0s", txt_green_prefix, p_id, end_cycle - start_cycle, reset_color);
+
     end // pattern loop
 
     // After all patterns processed: wait a few cycles then finish
@@ -397,7 +418,7 @@ initial begin
     if (ret != -1) $display("Warning: golden file has extra lines after expected outputs.");
 
     show_success();
-    $display("All patterns passed. Total golden outputs checked: %0d", golden_counter);
+    $display("%0sAll patterns passed. Total golden outputs checked: %0d%0s", txt_green_prefix, golden_counter, reset_color);
     $finish;
 end
 
